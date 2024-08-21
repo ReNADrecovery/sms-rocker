@@ -1,0 +1,63 @@
+Below is a basic Python script that you can use to pull data from Google Sheets and send SMS messages via the Messages app on your MacBook using Automator.
+
+### Step 1: Install Required Libraries
+First, ensure you have the necessary Python libraries installed. You'll need `gspread` to interact with Google Sheets and `pyobjc` to interface with the Mac's Messages app.
+
+```bash
+pip install gspread oauth2client pyobjc-framework-ScriptingBridge
+```
+
+### Step 2: Google Sheets Setup
+Set up your Google Sheets API credentials to access your Google Sheets data. Follow the official Google Sheets API documentation to create credentials and download the `credentials.json` file. Save this file in the same directory as your Python script.
+
+### Step 3: Python Script
+
+```python
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
+from ScriptingBridge import SBApplication
+import time
+
+# Google Sheets setup
+scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+creds = ServiceAccountCredentials.from_json_keyfile_name('credentials.json', scope)
+client = gspread.authorize(creds)
+
+# Open the Google Sheet by name
+sheet = client.open("Your Google Sheet Name").sheet1
+
+# Fetch all phone numbers and messages
+contacts = sheet.get_all_records()
+
+# Access Messages app on Mac
+messages_app = SBApplication.applicationWithBundleIdentifier_("com.apple.iChat")
+
+# Loop through contacts and send messages
+for contact in contacts:
+    phone_number = contact['Phone Number']
+    message_text = contact['Message']
+
+    # Create a new outgoing message
+    outgoing_message = messages_app.outgoingMessages().objectAtIndex_(0)
+    outgoing_message.content = message_text
+    outgoing_message.recipients = [phone_number]
+
+    # Send the message
+    outgoing_message.send()
+    
+    # Pause to avoid sending too fast
+    time.sleep(1)
+
+print("All messages have been sent!")
+```
+
+### Step 4: Run the Script
+- Run this script on your MacBook.
+- It will fetch phone numbers and corresponding messages from your Google Sheet and send each message through the Messages app on your MacBook.
+
+### Important Notes:
+- **Google Sheets API**: Ensure your Google Sheets are properly set up with API access.
+- **Messages App**: The `SBApplication` interface requires the Messages app to be configured correctly on your MacBook.
+- **Rate Limiting**: Adjust the `time.sleep(1)` to control the sending speed and avoid rate-limiting issues.
+
+This script assumes that you have set up everything correctly, including Google Sheets API credentials and the necessary Python environment on your MacBook.
